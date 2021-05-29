@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -71,7 +72,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			result = tailNoMap[searchTerm]
+			result = tailNoMap[strings.ToUpper(searchTerm)]
 
 		} else if option == "2" {
 			var searchTerm string
@@ -82,7 +83,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			result = modeSMap[searchTerm]
+			result = modeSMap[strings.ToLower(searchTerm)]
 
 		} else if option == "Q" || option == "q" {
 			break
