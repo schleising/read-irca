@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"fmt"
 	"log"
 	"os"
 )
@@ -46,59 +47,59 @@ func main() {
 		}
 	}
 
-	// for {
-	// 	var result map[string]string
-	// 	var option string
+	for {
+		var result map[string]string
+		var option string
 
-	// 	fmt.Println("Search by Tail Number (1) or Mode S ID (2) or (q) to quit: ")
+		fmt.Println("Search by Tail Number (1) or Mode S ID (2) or (q) to quit: ")
 
-	// 	_, err := fmt.Scanln(&option)
+		_, err := fmt.Scanln(&option)
 
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	// 	if option == "1" {
-	// 		var searchTerm string
+		if option == "1" {
+			var searchTerm string
 
-	// 		fmt.Println("Enter Tail No: ")
-	// 		_, err := fmt.Scanln(&searchTerm)
+			fmt.Println("Enter Tail No: ")
+			_, err := fmt.Scanln(&searchTerm)
 
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
+			if err != nil {
+				log.Fatal(err)
+			}
 
-	// 		fmt.Println(searchTerm)
-	// 		result = tailNoMap[searchTerm]
+			fmt.Println(searchTerm)
+			result = tailNoMap[searchTerm]
 
-	// 	} else if option == "2" {
-	// 		var searchTerm string
+		} else if option == "2" {
+			var searchTerm string
 
-	// 		fmt.Println("Enter Mode S ID in hex without the 0x: ")
-	// 		_, err := fmt.Scanln(&searchTerm)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
+			fmt.Println("Enter Mode S ID in hex without the 0x: ")
+			_, err := fmt.Scanln(&searchTerm)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-	// 		fmt.Println(searchTerm)
-	// 		result = modeSMap[searchTerm]
+			fmt.Println(searchTerm)
+			result = modeSMap[searchTerm]
 
-	// 	} else if option == "Q" || option == "q" {
-	// 		break
-	// 	} else {
-	// 		continue
-	// 	}
+		} else if option == "Q" || option == "q" {
+			break
+		} else {
+			continue
+		}
 
-	// 	if result == nil {
-	// 		fmt.Println("Item not in DB")
-	// 		continue
-	// 	} else {
-	// 		fmt.Println()
-	// 		for key, value := range result {
-	// 			fmt.Printf("%20s: %s\n", key, value)
-	// 		}
-	// 		fmt.Println("--------------------------------")
-	// 		fmt.Println()
-	// 	}
-	// }
+		if result == nil {
+			fmt.Println("Item not in DB")
+			continue
+		} else {
+			fmt.Println()
+			for key, value := range result {
+				fmt.Printf("%20s: %s\n", key, value)
+			}
+			fmt.Println("--------------------------------")
+			fmt.Println()
+		}
+	}
 }
