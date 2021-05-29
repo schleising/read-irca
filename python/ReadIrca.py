@@ -49,6 +49,6 @@ class Timer():
     def __exit__(self, exc_type, exc_value, exc_tb):
         if exc_type == ValueError:
             print(exc_value)
-        print(f'{self.message}: {timeit.default_timer() - self.startTime}')
+        print(f'{self.message}: {timeit.default_timer() - self.startTime:.2f} seconds')
 
 main()
