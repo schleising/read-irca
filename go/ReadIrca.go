@@ -15,6 +15,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	fmt.Println("Reading Data")
+
 	reader := csv.NewReader(f)
 
 	header, err := reader.Read()
@@ -22,6 +24,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Println("Read All")
 
 	data, err := reader.ReadAll()
 
@@ -31,24 +35,28 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var tailNoMap = make(map[string]map[string]string)
-	var modeSMap = make(map[string]map[string]string)
+	var tailNoMap = make(map[string]map[string]string, len(data))
+	var modeSMap = make(map[string]map[string]string, len(data))
+
+	fmt.Println("Making Maps")
 
 	for i := 0; i < len(data); i++ {
-		var entryMap = make(map[string]string)
+		var entryMap = make(map[string]string, len(header))
 
 		for j := 0; j < len(header); j++ {
 			entryMap[header[j]] = data[i][j]
 		}
 
 		if entryMap["registration"] != "" {
-			tailNoMap[entryMap["registration"]] = entryMap
+			tailNoMap[string(entryMap["registration"])] = entryMap
 		}
 
 		if entryMap["icao24"] != "" {
 			modeSMap[entryMap["icao24"]] = entryMap
 		}
 	}
+
+	fmt.Println("Maps Complete")
 
 	for {
 		var result map[string]string
