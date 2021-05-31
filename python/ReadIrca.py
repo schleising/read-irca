@@ -36,7 +36,7 @@ class Entry():
 
 def main() -> None:
     with Timer('Reading Data'):
-        with open(Path('openskies/aircraftDatabase.csv'), 'r', encoding='utf-8') as inputFile:
+        with open(Path('openskies/aircraftDatabase.csv'), 'r', encoding='utf-8', newline='') as inputFile:
             reader = csv.DictReader(inputFile)
             inputList: List[Entry] = []
 
@@ -70,6 +70,7 @@ def main() -> None:
                     row['notes'],
                     row['categoryDescription'],
                 )
+
                 inputList.append(entry)
 
     with Timer('Parsing by Tail Number'):
