@@ -1,18 +1,82 @@
 from pathlib import Path
 import csv
 import timeit
+from dataclasses import dataclass
+from typing import List
+
+@dataclass
+class Entry():
+	Icao24             : str = ''
+	Registration       : str = ''
+	Manufacturericao   : str = ''
+	Manufacturername   : str = ''
+	Model              : str = ''
+	Typecode           : str = ''
+	Serialnumber       : str = ''
+	Linenumber         : str = ''
+	Icaoaircrafttype   : str = ''
+	Operator           : str = ''
+	Operatorcallsign   : str = ''
+	Operatoricao       : str = ''
+	Operatoriata       : str = ''
+	Owner              : str = ''
+	Testreg            : str = ''
+	Registered         : str = ''
+	Reguntil           : str = ''
+	Status             : str = ''
+	Built              : str = ''
+	Firstflightdate    : str = ''
+	Seatconfiguration  : str = ''
+	Engines            : str = ''
+	Modes              : str = ''
+	Adsb               : str = ''
+	Acars              : str = ''
+	Notes              : str = ''
+	CategoryDescription: str = ''
 
 def main() -> None:
     with Timer('Reading Data'):
         with open(Path('openskies/aircraftDatabase.csv'), 'r', encoding='utf-8') as inputFile:
             reader = csv.DictReader(inputFile)
-            inputList = [row for row in reader]
+            inputList: List[Entry] = []
+
+            for row in reader:
+                entry = Entry(
+                    row['icao24'],
+                    row['registration'],
+                    row['manufacturericao'],
+                    row['manufacturername'],
+                    row['model'],
+                    row['typecode'],
+                    row['serialnumber'],
+                    row['linenumber'],
+                    row['icaoaircrafttype'],
+                    row['operator'],
+                    row['operatorcallsign'],
+                    row['operatoricao'],
+                    row['operatoriata'],
+                    row['owner'],
+                    row['testreg'],
+                    row['registered'],
+                    row['reguntil'],
+                    row['status'],
+                    row['built'],
+                    row['firstflightdate'],
+                    row['seatconfiguration'],
+                    row['engines'],
+                    row['modes'],
+                    row['adsb'],
+                    row['acars'],
+                    row['notes'],
+                    row['categoryDescription'],
+                )
+                inputList.append(entry)
 
     with Timer('Parsing by Tail Number'):
-        tailNoDict = {entry['registration']: entry for entry in inputList if entry['registration'] not in ['', None]}
+        tailNoDict = {entry.Registration: entry for entry in inputList if entry.Registration not in ['', None]}
 
     with Timer('Parsing by Mode S ID'):
-        modeSDict = {entry['icao24']: entry for entry in inputList if entry['icao24'] not in ['', None]}
+        modeSDict = {entry.Icao24: entry for entry in inputList if entry.Icao24 not in ['', None]}
 
     while(True):
         option = input('Search by Tail Number (1) or Mode S ID (2) or (q) to quit: ').upper()
@@ -33,7 +97,7 @@ def main() -> None:
             continue
         else:
             print()
-            for key, value in result.items(): print(f'{key:20}: {value}')
+            for key, value in result.__dict__.items(): print(f'{key:20}: {value}')
             print('--------------------------------')
             print()
 
