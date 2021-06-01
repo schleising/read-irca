@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"runtime"
 	"strings"
 )
 
@@ -42,52 +43,61 @@ type Entry struct {
 func makeMaps(data [][]string) (map[string]Entry, map[string]Entry) {
 	tailNoMap := make(map[string]Entry)
 	modeSMap := make(map[string]Entry)
-	ch := make(chan Entry)
+	ch := make(chan []Entry)
+	numCores := runtime.NumCPU()
+	linesPerJob := len(data) / numCores
 
-	for line := 0; line < len(data); line++ {
-		go func(ch chan Entry, line int) {
-			entry := Entry{
-				Icao24:              data[line][0],
-				Registration:        data[line][1],
-				Manufacturericao:    data[line][2],
-				Manufacturername:    data[line][3],
-				Model:               data[line][4],
-				Typecode:            data[line][5],
-				Serialnumber:        data[line][6],
-				Linenumber:          data[line][7],
-				Icaoaircrafttype:    data[line][8],
-				Operator:            data[line][9],
-				Operatorcallsign:    data[line][10],
-				Operatoricao:        data[line][11],
-				Operatoriata:        data[line][12],
-				Owner:               data[line][13],
-				Testreg:             data[line][14],
-				Registered:          data[line][15],
-				Reguntil:            data[line][16],
-				Status:              data[line][17],
-				Built:               data[line][18],
-				Firstflightdate:     data[line][19],
-				Seatconfiguration:   data[line][20],
-				Engines:             data[line][21],
-				Modes:               data[line][22],
-				Adsb:                data[line][23],
-				Acars:               data[line][24],
-				Notes:               data[line][25],
-				CategoryDescription: data[line][26]}
+	for job := 0; job < numCores; job++ {
+		go func(job int) {
+			entries := make([]Entry, linesPerJob)
 
-			ch <- entry
-		}(ch, line)
+			for line := job * linesPerJob; line < job*linesPerJob+linesPerJob; line++ {
+				entry := Entry{
+					Icao24:              data[line][0],
+					Registration:        data[line][1],
+					Manufacturericao:    data[line][2],
+					Manufacturername:    data[line][3],
+					Model:               data[line][4],
+					Typecode:            data[line][5],
+					Serialnumber:        data[line][6],
+					Linenumber:          data[line][7],
+					Icaoaircrafttype:    data[line][8],
+					Operator:            data[line][9],
+					Operatorcallsign:    data[line][10],
+					Operatoricao:        data[line][11],
+					Operatoriata:        data[line][12],
+					Owner:               data[line][13],
+					Testreg:             data[line][14],
+					Registered:          data[line][15],
+					Reguntil:            data[line][16],
+					Status:              data[line][17],
+					Built:               data[line][18],
+					Firstflightdate:     data[line][19],
+					Seatconfiguration:   data[line][20],
+					Engines:             data[line][21],
+					Modes:               data[line][22],
+					Adsb:                data[line][23],
+					Acars:               data[line][24],
+					Notes:               data[line][25],
+					CategoryDescription: data[line][26]}
+
+				entries = append(entries, entry)
+			}
+			ch <- entries
+		}(job)
 	}
 
-	for i := 0; i < len(data); i++ {
-		entry := <-ch
+	for i := 0; i < numCores; i++ {
+		entries := <-ch
 
-		if entry.Registration != "" {
-			tailNoMap[entry.Registration] = entry
-		}
+		for entry := range entries {
+			if entries[entry].Registration != "" {
+				tailNoMap[entries[entry].Registration] = entries[entry]
+			}
 
-		if entry.Icao24 != "" {
-			modeSMap[entry.Icao24] = entry
+			if entries[entry].Icao24 != "" {
+				modeSMap[entries[entry].Icao24] = entries[entry]
+			}
 		}
 	}
 
