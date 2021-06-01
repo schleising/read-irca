@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"reflect"
@@ -40,6 +39,53 @@ type Entry struct {
 	CategoryDescription string
 }
 
+func makeMaps(data [][]string) (map[string]Entry, map[string]Entry) {
+	var tailNoMap = make(map[string]Entry)
+	var modeSMap = make(map[string]Entry)
+
+	for line := 0; line < len(data); line++ {
+
+		entry := Entry{
+			Icao24:              data[line][0],
+			Registration:        data[line][1],
+			Manufacturericao:    data[line][2],
+			Manufacturername:    data[line][3],
+			Model:               data[line][4],
+			Typecode:            data[line][5],
+			Serialnumber:        data[line][6],
+			Linenumber:          data[line][7],
+			Icaoaircrafttype:    data[line][8],
+			Operator:            data[line][9],
+			Operatorcallsign:    data[line][10],
+			Operatoricao:        data[line][11],
+			Operatoriata:        data[line][12],
+			Owner:               data[line][13],
+			Testreg:             data[line][14],
+			Registered:          data[line][15],
+			Reguntil:            data[line][16],
+			Status:              data[line][17],
+			Built:               data[line][18],
+			Firstflightdate:     data[line][19],
+			Seatconfiguration:   data[line][20],
+			Engines:             data[line][21],
+			Modes:               data[line][22],
+			Adsb:                data[line][23],
+			Acars:               data[line][24],
+			Notes:               data[line][25],
+			CategoryDescription: data[line][26]}
+
+		if entry.Registration != "" {
+			tailNoMap[entry.Registration] = entry
+		}
+
+		if entry.Icao24 != "" {
+			modeSMap[entry.Icao24] = entry
+		}
+	}
+
+	return tailNoMap, modeSMap
+}
+
 func main() {
 	f, err := os.Open("openskies/aircraftDatabase.csv")
 
@@ -61,59 +107,15 @@ func main() {
 
 	fmt.Println("Read All")
 
-	var tailNoMap = make(map[string]Entry)
-	var modeSMap = make(map[string]Entry)
+	data, err := reader.ReadAll()
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fmt.Println("Making Maps")
 
-	for {
-		data, err := reader.Read()
-
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				log.Fatal(err)
-			}
-		}
-
-		entry := Entry{
-			Icao24:              data[0],
-			Registration:        data[1],
-			Manufacturericao:    data[2],
-			Manufacturername:    data[3],
-			Model:               data[4],
-			Typecode:            data[5],
-			Serialnumber:        data[6],
-			Linenumber:          data[7],
-			Icaoaircrafttype:    data[8],
-			Operator:            data[9],
-			Operatorcallsign:    data[10],
-			Operatoricao:        data[11],
-			Operatoriata:        data[12],
-			Owner:               data[13],
-			Testreg:             data[14],
-			Registered:          data[15],
-			Reguntil:            data[16],
-			Status:              data[17],
-			Built:               data[18],
-			Firstflightdate:     data[19],
-			Seatconfiguration:   data[20],
-			Engines:             data[21],
-			Modes:               data[22],
-			Adsb:                data[23],
-			Acars:               data[24],
-			Notes:               data[25],
-			CategoryDescription: data[26]}
-
-		if entry.Registration != "" {
-			tailNoMap[entry.Registration] = entry
-		}
-
-		if entry.Icao24 != "" {
-			modeSMap[entry.Icao24] = entry
-		}
-	}
+	tailNoMap, modeSMap := makeMaps(data)
 
 	fmt.Println("Maps Complete")
 
