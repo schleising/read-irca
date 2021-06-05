@@ -40,16 +40,24 @@ type Entry struct {
 	CategoryDescription string
 }
 
+type Job struct {
+	job     int
+	entries []Entry
+}
+
 func makeMaps(data [][]string) (map[string]Entry, map[string]Entry) {
 	tailNoMap := make(map[string]Entry)
 	modeSMap := make(map[string]Entry)
-	ch := make(chan []Entry)
+	ch := make(chan Job)
 	numCores := runtime.NumCPU()
 	linesPerJob := len(data) / numCores
 
+	fmt.Println("Starting Jobs")
+
 	for job := 0; job < numCores; job++ {
 		go func(job int) {
-			entries := make([]Entry, linesPerJob)
+			fmt.Printf("Starting Job %d\n", job)
+			entries := []Entry{}
 
 			for line := job * linesPerJob; line < job*linesPerJob+linesPerJob; line++ {
 				entry := Entry{
@@ -83,22 +91,32 @@ func makeMaps(data [][]string) (map[string]Entry, map[string]Entry) {
 
 				entries = append(entries, entry)
 			}
-			ch <- entries
+			fmt.Printf("Finished Job %d\n", job)
+
+			results := Job{
+				job,
+				entries,
+			}
+
+			ch <- results
+			fmt.Printf("Sent Job %d\n", job)
 		}(job)
 	}
 
 	for i := 0; i < numCores; i++ {
-		entries := <-ch
+		results := <-ch
 
-		for entry := range entries {
-			if entries[entry].Registration != "" {
-				tailNoMap[entries[entry].Registration] = entries[entry]
+		for entry := range results.entries {
+			if results.entries[entry].Registration != "" {
+				tailNoMap[results.entries[entry].Registration] = results.entries[entry]
 			}
 
-			if entries[entry].Icao24 != "" {
-				modeSMap[entries[entry].Icao24] = entries[entry]
+			if results.entries[entry].Icao24 != "" {
+				modeSMap[results.entries[entry].Icao24] = results.entries[entry]
 			}
 		}
+
+		fmt.Printf("Made Map %d\n", results.job)
 	}
 
 	return tailNoMap, modeSMap
