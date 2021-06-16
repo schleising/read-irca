@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"reflect"
-	"runtime"
 	"strings"
 )
 
@@ -48,75 +47,55 @@ type Job struct {
 func makeMaps(data [][]string) (map[string]Entry, map[string]Entry) {
 	tailNoMap := make(map[string]Entry)
 	modeSMap := make(map[string]Entry)
-	ch := make(chan Job)
-	numCores := runtime.NumCPU()
-	linesPerJob := len(data) / numCores
+	ch := make(chan Entry, len(data))
 
 	fmt.Println("Starting Jobs")
 
-	for job := 0; job < numCores; job++ {
-		go func(job int) {
-			fmt.Printf("Starting Job %d\n", job)
-			entries := []Entry{}
+	for i := range data {
+		go func(line int) {
+			entry := Entry{
+				Icao24:              data[line][0],
+				Registration:        data[line][1],
+				Manufacturericao:    data[line][2],
+				Manufacturername:    data[line][3],
+				Model:               data[line][4],
+				Typecode:            data[line][5],
+				Serialnumber:        data[line][6],
+				Linenumber:          data[line][7],
+				Icaoaircrafttype:    data[line][8],
+				Operator:            data[line][9],
+				Operatorcallsign:    data[line][10],
+				Operatoricao:        data[line][11],
+				Operatoriata:        data[line][12],
+				Owner:               data[line][13],
+				Testreg:             data[line][14],
+				Registered:          data[line][15],
+				Reguntil:            data[line][16],
+				Status:              data[line][17],
+				Built:               data[line][18],
+				Firstflightdate:     data[line][19],
+				Seatconfiguration:   data[line][20],
+				Engines:             data[line][21],
+				Modes:               data[line][22],
+				Adsb:                data[line][23],
+				Acars:               data[line][24],
+				Notes:               data[line][25],
+				CategoryDescription: data[line][26]}
 
-			for line := job * linesPerJob; line < job*linesPerJob+linesPerJob; line++ {
-				entry := Entry{
-					Icao24:              data[line][0],
-					Registration:        data[line][1],
-					Manufacturericao:    data[line][2],
-					Manufacturername:    data[line][3],
-					Model:               data[line][4],
-					Typecode:            data[line][5],
-					Serialnumber:        data[line][6],
-					Linenumber:          data[line][7],
-					Icaoaircrafttype:    data[line][8],
-					Operator:            data[line][9],
-					Operatorcallsign:    data[line][10],
-					Operatoricao:        data[line][11],
-					Operatoriata:        data[line][12],
-					Owner:               data[line][13],
-					Testreg:             data[line][14],
-					Registered:          data[line][15],
-					Reguntil:            data[line][16],
-					Status:              data[line][17],
-					Built:               data[line][18],
-					Firstflightdate:     data[line][19],
-					Seatconfiguration:   data[line][20],
-					Engines:             data[line][21],
-					Modes:               data[line][22],
-					Adsb:                data[line][23],
-					Acars:               data[line][24],
-					Notes:               data[line][25],
-					CategoryDescription: data[line][26]}
-
-				entries = append(entries, entry)
-			}
-			fmt.Printf("Finished Job %d\n", job)
-
-			results := Job{
-				job,
-				entries,
-			}
-
-			ch <- results
-			fmt.Printf("Sent Job %d\n", job)
-		}(job)
+			ch <- entry
+		}(i)
 	}
 
-	for i := 0; i < numCores; i++ {
-		results := <-ch
+	for range data {
+		result := <-ch
 
-		for entry := range results.entries {
-			if results.entries[entry].Registration != "" {
-				tailNoMap[results.entries[entry].Registration] = results.entries[entry]
-			}
-
-			if results.entries[entry].Icao24 != "" {
-				modeSMap[results.entries[entry].Icao24] = results.entries[entry]
-			}
+		if result.Registration != "" {
+			tailNoMap[result.Registration] = result
 		}
 
-		fmt.Printf("Made Map %d\n", results.job)
+		if result.Icao24 != "" {
+			modeSMap[result.Icao24] = result
+		}
 	}
 
 	return tailNoMap, modeSMap
