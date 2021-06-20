@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
-	"strings"
+	"sync"
 )
 
 type Entry struct {
@@ -39,62 +38,78 @@ type Entry struct {
 	CategoryDescription string
 }
 
-type Job struct {
-	job     int
-	entries []Entry
+// type Job struct {
+// 	job     int
+// 	entries []Entry
+// }
+
+func readEntries(data [][]string, ch chan Entry) {
+	wg := sync.WaitGroup{}
+
+	for i, line := range data {
+		wg.Add(1)
+
+		go func(i int, line []string) {
+			entry := Entry{
+				Icao24:              line[0],
+				Registration:        line[1],
+				Manufacturericao:    line[2],
+				Manufacturername:    line[3],
+				Model:               line[4],
+				Typecode:            line[5],
+				Serialnumber:        line[6],
+				Linenumber:          line[7],
+				Icaoaircrafttype:    line[8],
+				Operator:            line[9],
+				Operatorcallsign:    line[10],
+				Operatoricao:        line[11],
+				Operatoriata:        line[12],
+				Owner:               line[13],
+				Testreg:             line[14],
+				Registered:          line[15],
+				Reguntil:            line[16],
+				Status:              line[17],
+				Built:               line[18],
+				Firstflightdate:     line[19],
+				Seatconfiguration:   line[20],
+				Engines:             line[21],
+				Modes:               line[22],
+				Adsb:                line[23],
+				Acars:               line[24],
+				Notes:               line[25],
+				CategoryDescription: line[26]}
+
+			ch <- entry
+
+			wg.Done()
+		}(i, line)
+	}
+
+	fmt.Println("Finished Reading")
+
+	wg.Wait()
+
+	close(ch)
 }
 
 func makeMaps(data [][]string) (map[string]Entry, map[string]Entry) {
 	tailNoMap := make(map[string]Entry)
 	modeSMap := make(map[string]Entry)
-	ch := make(chan Entry, len(data))
+	ch := make(chan Entry)
 
 	fmt.Println("Starting Jobs")
 
-	for i := range data {
-		go func(line int) {
-			entry := Entry{
-				Icao24:              data[line][0],
-				Registration:        data[line][1],
-				Manufacturericao:    data[line][2],
-				Manufacturername:    data[line][3],
-				Model:               data[line][4],
-				Typecode:            data[line][5],
-				Serialnumber:        data[line][6],
-				Linenumber:          data[line][7],
-				Icaoaircrafttype:    data[line][8],
-				Operator:            data[line][9],
-				Operatorcallsign:    data[line][10],
-				Operatoricao:        data[line][11],
-				Operatoriata:        data[line][12],
-				Owner:               data[line][13],
-				Testreg:             data[line][14],
-				Registered:          data[line][15],
-				Reguntil:            data[line][16],
-				Status:              data[line][17],
-				Built:               data[line][18],
-				Firstflightdate:     data[line][19],
-				Seatconfiguration:   data[line][20],
-				Engines:             data[line][21],
-				Modes:               data[line][22],
-				Adsb:                data[line][23],
-				Acars:               data[line][24],
-				Notes:               data[line][25],
-				CategoryDescription: data[line][26]}
+	go readEntries(data, ch)
 
-			ch <- entry
-		}(i)
-	}
+	fmt.Println("Ready to Recieve")
 
-	for range data {
-		result := <-ch
-
-		if result.Registration != "" {
-			tailNoMap[result.Registration] = result
+	for entry := range ch {
+		if entry.Registration != "" {
+			tailNoMap[entry.Registration] = entry
 		}
 
-		if result.Icao24 != "" {
-			modeSMap[result.Icao24] = result
+		if entry.Icao24 != "" {
+			modeSMap[entry.Icao24] = entry
 		}
 	}
 
@@ -130,65 +145,66 @@ func main() {
 
 	fmt.Println("Making Maps")
 
-	tailNoMap, modeSMap := makeMaps(data)
+	makeMaps(data)
+	// tailNoMap, modeSMap := makeMaps(data)
 
 	fmt.Println("Maps Complete")
 
-	for {
-		var result Entry
-		var option string
+	// for {
+	// 	var result Entry
+	// 	var option string
 
-		fmt.Println("Search by Tail Number (1) or Mode S ID (2) or (q) to quit: ")
+	// 	fmt.Println("Search by Tail Number (1) or Mode S ID (2) or (q) to quit: ")
 
-		_, err := fmt.Scan(&option)
+	// 	_, err := fmt.Scan(&option)
 
-		if err != nil {
-			log.Fatal(err)
-		}
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
 
-		if option == "1" {
-			var searchTerm string
+	// 	if option == "1" {
+	// 		var searchTerm string
 
-			fmt.Println("Enter Tail No: ")
-			_, err := fmt.Scan(&searchTerm)
+	// 		fmt.Println("Enter Tail No: ")
+	// 		_, err := fmt.Scan(&searchTerm)
 
-			if err != nil {
-				log.Fatal(err)
-			}
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 		}
 
-			result = tailNoMap[strings.ToUpper(searchTerm)]
+	// 		result = tailNoMap[strings.ToUpper(searchTerm)]
 
-		} else if option == "2" {
-			var searchTerm string
+	// 	} else if option == "2" {
+	// 		var searchTerm string
 
-			fmt.Println("Enter Mode S ID in hex without the 0x: ")
-			_, err := fmt.Scan(&searchTerm)
-			if err != nil {
-				log.Fatal(err)
-			}
+	// 		fmt.Println("Enter Mode S ID in hex without the 0x: ")
+	// 		_, err := fmt.Scan(&searchTerm)
+	// 		if err != nil {
+	// 			log.Fatal(err)
+	// 		}
 
-			result = modeSMap[strings.ToLower(searchTerm)]
+	// 		result = modeSMap[strings.ToLower(searchTerm)]
 
-		} else if option == "Q" || option == "q" {
-			break
-		} else {
-			continue
-		}
+	// 	} else if option == "Q" || option == "q" {
+	// 		break
+	// 	} else {
+	// 		continue
+	// 	}
 
-		if result == (Entry{}) {
-			fmt.Println("Item not in DB")
-			continue
-		} else {
-			fmt.Println()
-			valueOfResult := reflect.ValueOf(result)
-			typeOfResult := valueOfResult.Type()
+	// 	if result == (Entry{}) {
+	// 		fmt.Println("Item not in DB")
+	// 		continue
+	// 	} else {
+	// 		fmt.Println()
+	// 		valueOfResult := reflect.ValueOf(result)
+	// 		typeOfResult := valueOfResult.Type()
 
-			for i := 0; i < valueOfResult.NumField(); i++ {
-				fmt.Printf("%20s: %s\n", typeOfResult.Field(i).Name, valueOfResult.Field(i).Interface())
-			}
+	// 		for i := 0; i < valueOfResult.NumField(); i++ {
+	// 			fmt.Printf("%20s: %s\n", typeOfResult.Field(i).Name, valueOfResult.Field(i).Interface())
+	// 		}
 
-			fmt.Println("--------------------------------")
-			fmt.Println()
-		}
-	}
+	// 		fmt.Println("--------------------------------")
+	// 		fmt.Println()
+	// 	}
+	// }
 }
