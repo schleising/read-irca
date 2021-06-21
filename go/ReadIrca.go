@@ -89,7 +89,7 @@ func readEntries(dataChan chan []string, entryChan chan Entry) {
 
 	wg.Wait()
 
-	fmt.Println("Finished Reading")
+	fmt.Println("Finished Jobs")
 }
 
 func addToMaps(entry Entry, tailNoMap *map[string]Entry, modeSMap *map[string]Entry, wg *sync.WaitGroup, tnMutex *sync.Mutex, mSMutex *sync.Mutex) {
@@ -111,7 +111,7 @@ func addToMaps(entry Entry, tailNoMap *map[string]Entry, modeSMap *map[string]En
 func makeMaps(dataChan chan []string) (map[string]Entry, map[string]Entry) {
 	tailNoMap := make(map[string]Entry)
 	modeSMap := make(map[string]Entry)
-	entryChan := make(chan Entry)
+	entryChan := make(chan Entry, 10)
 	wg := sync.WaitGroup{}
 	tnMutex := sync.Mutex{}
 	mSMutex := sync.Mutex{}
@@ -150,10 +150,12 @@ func readData(reader *csv.Reader, dataChan chan []string) {
 			dataChan <- line
 		}
 	}
+
+	fmt.Println("Read All Data")
 }
 
 func main() {
-	dataChan := make(chan []string)
+	dataChan := make(chan []string, 10)
 	f, err := os.Open("openskies/aircraftDatabase.csv")
 
 	if err != nil {
