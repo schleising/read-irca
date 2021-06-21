@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"sync"
@@ -43,13 +44,16 @@ type Entry struct {
 // 	entries []Entry
 // }
 
-func readEntries(data [][]string, ch chan Entry) {
+func readEntries(dataChan chan []string, entryChan chan Entry) {
 	wg := sync.WaitGroup{}
+	defer close(entryChan)
 
-	for i, line := range data {
+	for line := range dataChan {
 		wg.Add(1)
 
-		go func(i int, line []string) {
+		go func(line []string) {
+			defer wg.Done()
+
 			entry := Entry{
 				Icao24:              line[0],
 				Registration:        line[1],
@@ -79,44 +83,77 @@ func readEntries(data [][]string, ch chan Entry) {
 				Notes:               line[25],
 				CategoryDescription: line[26]}
 
-			ch <- entry
-
-			wg.Done()
-		}(i, line)
+			entryChan <- entry
+		}(line)
 	}
-
-	fmt.Println("Finished Reading")
 
 	wg.Wait()
 
-	close(ch)
+	fmt.Println("Finished Reading")
 }
 
-func makeMaps(data [][]string) (map[string]Entry, map[string]Entry) {
+func addToMaps(entry Entry, tailNoMap *map[string]Entry, modeSMap *map[string]Entry, wg *sync.WaitGroup, tnMutex *sync.Mutex, mSMutex *sync.Mutex) {
+	defer wg.Done()
+
+	if entry.Registration != "" {
+		tnMutex.Lock()
+		(*tailNoMap)[entry.Registration] = entry
+		tnMutex.Unlock()
+	}
+
+	if entry.Icao24 != "" {
+		mSMutex.Lock()
+		(*modeSMap)[entry.Icao24] = entry
+		mSMutex.Unlock()
+	}
+}
+
+func makeMaps(dataChan chan []string) (map[string]Entry, map[string]Entry) {
 	tailNoMap := make(map[string]Entry)
 	modeSMap := make(map[string]Entry)
-	ch := make(chan Entry)
+	entryChan := make(chan Entry)
+	wg := sync.WaitGroup{}
+	tnMutex := sync.Mutex{}
+	mSMutex := sync.Mutex{}
 
 	fmt.Println("Starting Jobs")
 
-	go readEntries(data, ch)
+	go readEntries(dataChan, entryChan)
 
 	fmt.Println("Ready to Recieve")
 
-	for entry := range ch {
-		if entry.Registration != "" {
-			tailNoMap[entry.Registration] = entry
-		}
-
-		if entry.Icao24 != "" {
-			modeSMap[entry.Icao24] = entry
-		}
+	for entry := range entryChan {
+		wg.Add(1)
+		go addToMaps(entry, &tailNoMap, &modeSMap, &wg, &tnMutex, &mSMutex)
 	}
+
+	wg.Wait()
+
+	fmt.Println("Receive Complete")
 
 	return tailNoMap, modeSMap
 }
 
+func readData(reader *csv.Reader, dataChan chan []string) {
+	defer close(dataChan)
+
+	for {
+		line, err := reader.Read()
+
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				log.Fatal(err)
+			}
+		} else {
+			dataChan <- line
+		}
+	}
+}
+
 func main() {
+	dataChan := make(chan []string)
 	f, err := os.Open("openskies/aircraftDatabase.csv")
 
 	if err != nil {
@@ -135,18 +172,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Read All")
+	fmt.Println("Read Data")
 
-	data, err := reader.ReadAll()
-
-	if err != nil {
-		log.Fatal(err)
-	}
+	go readData(reader, dataChan)
 
 	fmt.Println("Making Maps")
 
-	makeMaps(data)
-	// tailNoMap, modeSMap := makeMaps(data)
+	makeMaps(dataChan)
+	// tailNoMap, modeSMap := makeMaps(dataChan)
 
 	fmt.Println("Maps Complete")
 
