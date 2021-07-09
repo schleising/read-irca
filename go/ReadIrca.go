@@ -6,6 +6,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"reflect"
+	"strings"
 	"sync"
 )
 
@@ -180,66 +182,66 @@ func main() {
 
 	fmt.Println("Making Maps")
 
-	makeMaps(dataChan)
-	// tailNoMap, modeSMap := makeMaps(dataChan)
+	// makeMaps(dataChan)
+	tailNoMap, modeSMap := makeMaps(dataChan)
 
 	fmt.Println("Maps Complete")
 
-	// for {
-	// 	var result Entry
-	// 	var option string
+	for {
+		var result Entry
+		var option string
 
-	// 	fmt.Println("Search by Tail Number (1) or Mode S ID (2) or (q) to quit: ")
+		fmt.Println("Search by Tail Number (1) or Mode S ID (2) or (q) to quit: ")
 
-	// 	_, err := fmt.Scan(&option)
+		_, err := fmt.Scan(&option)
 
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	// 	if option == "1" {
-	// 		var searchTerm string
+		if option == "1" {
+			var searchTerm string
 
-	// 		fmt.Println("Enter Tail No: ")
-	// 		_, err := fmt.Scan(&searchTerm)
+			fmt.Println("Enter Tail No: ")
+			_, err := fmt.Scan(&searchTerm)
 
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
+			if err != nil {
+				log.Fatal(err)
+			}
 
-	// 		result = tailNoMap[strings.ToUpper(searchTerm)]
+			result = tailNoMap[strings.ToUpper(searchTerm)]
 
-	// 	} else if option == "2" {
-	// 		var searchTerm string
+		} else if option == "2" {
+			var searchTerm string
 
-	// 		fmt.Println("Enter Mode S ID in hex without the 0x: ")
-	// 		_, err := fmt.Scan(&searchTerm)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
+			fmt.Println("Enter Mode S ID in hex without the 0x: ")
+			_, err := fmt.Scan(&searchTerm)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-	// 		result = modeSMap[strings.ToLower(searchTerm)]
+			result = modeSMap[strings.ToLower(searchTerm)]
 
-	// 	} else if option == "Q" || option == "q" {
-	// 		break
-	// 	} else {
-	// 		continue
-	// 	}
+		} else if option == "Q" || option == "q" {
+			break
+		} else {
+			continue
+		}
 
-	// 	if result == (Entry{}) {
-	// 		fmt.Println("Item not in DB")
-	// 		continue
-	// 	} else {
-	// 		fmt.Println()
-	// 		valueOfResult := reflect.ValueOf(result)
-	// 		typeOfResult := valueOfResult.Type()
+		if result == (Entry{}) {
+			fmt.Println("Item not in DB")
+			continue
+		} else {
+			fmt.Println()
+			valueOfResult := reflect.ValueOf(result)
+			typeOfResult := valueOfResult.Type()
 
-	// 		for i := 0; i < valueOfResult.NumField(); i++ {
-	// 			fmt.Printf("%20s: %s\n", typeOfResult.Field(i).Name, valueOfResult.Field(i).Interface())
-	// 		}
+			for i := 0; i < valueOfResult.NumField(); i++ {
+				fmt.Printf("%20s: %s\n", typeOfResult.Field(i).Name, valueOfResult.Field(i).Interface())
+			}
 
-	// 		fmt.Println("--------------------------------")
-	// 		fmt.Println()
-	// 	}
-	// }
+			fmt.Println("--------------------------------")
+			fmt.Println()
+		}
+	}
 }
