@@ -14,7 +14,7 @@ func main() {
 	record2 := Record{
 		one:   input[0],
 		three: input[1],
-		two:   input[2],
+		two:   input[3],
 	}
 
 	fmt.Println(record1)
