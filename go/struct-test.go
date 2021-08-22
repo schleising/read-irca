@@ -9,7 +9,7 @@ type Record struct {
 }
 
 func main() {
-	input := []string{"four", "five", "six"}
+	input := []string{"four", "five", "six", "seven"}
 	record1 := Record{"1", "2.3", "Test"}
 	record2 := Record{
 		one:   input[0],
